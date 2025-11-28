@@ -1,0 +1,28 @@
+@model IEnumerable<AdisyonWeb.Entities.RestaurantTable>
+
+    @{
+    ViewData["Title"] = "Masalar";
+    }
+
+    <h2 class="mb-4">Masalar</h2>
+
+    <div class="row">
+        @foreach (var table in Model)
+    {
+        var color = table.Status == 0 ? "bg-success" : "bg-danger";
+        var text = table.Status == 0 ? "Boþ" : "Dolu";
+
+        <div class="col-md-3 mb-3">
+            <a href="@Url.Action("Manage", "Orders", new { tableId = table.TableId })"
+               style="text-decoration:none;">
+                <div class="card @color text-white text-center"
+                     style="cursor:pointer; font-size:20px; padding:20px;">
+                    <div>
+                        <strong>Masa @table.TableNumber</strong>
+                    </div>
+                    <div>@text</div>
+                </div>
+            </a>
+        </div>
+    }
+    </div>

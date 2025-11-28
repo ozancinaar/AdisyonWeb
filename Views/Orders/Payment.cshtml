@@ -1,0 +1,127 @@
+﻿@model AdisyonWeb.ViewModels.PaymentViewModel
+
+@{
+    ViewData["Title"] = "Ödeme";
+}
+
+<h2>Masa @Model.Table.TableNumber - Ödeme</h2>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+<div class="alert alert-danger">
+    @Model.ErrorMessage
+</div>
+}
+
+<div class="card mt-3">
+    <div class="card-body">
+        <h4>Toplam Tutar: @Model.TotalAmount.ToString("0.00") ₺</h4>
+
+        <form action="/Orders/Payment" method="post">
+            <input type="hidden" name="OrderId" value="@Model.OrderId" />
+            <input type="hidden" name="TableId" value="@Model.TableId" />
+            <input type="hidden" id="totalAmount" name="TotalAmount" value="@Model.TotalAmount" />
+
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <label class="form-label">Ödeme Tipi</label>
+                <div>
+                    <label class="form-check form-check-inline">
+                        <input class="form-check-input"
+                               type="radio"
+                               name="PaymentType"
+                               value="0"
+                               @(Model.PaymentType == 0 ? "checked" : "") />
+                        <span class="form-check-label">Nakit</span>
+                    </label>
+
+                    <label class="form-check form-check-inline">
+                        <input class="form-check-input"
+                               type="radio"
+                               name="PaymentType"
+                               value="1"
+                               @(Model.PaymentType == 1 ? "checked" : "") />
+                        <span class="form-check-label">Kart</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-3" id="cashSection">
+                <label class="form-label">Verilen Para (Nakit)</label>
+                <input id="cashGivenInput" name="CashGiven" class="form-control" type="number" step="0.01"
+                       value="@(Model.CashGiven.HasValue ? Model.CashGiven.Value.ToString("0.00") : "")" />
+            </div>
+
+            <div class="mb-3" id="changeSection">
+                <label class="form-label">Para Üstü</label>
+                <input id="changeDisplay" class="form-control" type="text" readonly />
+            </div>
+
+            <button type="submit" class="btn btn-success">Ödemeyi Tamamla</button>
+            <a asp-controller="Orders" asp-action="Manage" asp-route-tableId="@Model.TableId"
+               class="btn btn-secondary ms-2">
+                Geri
+            </a>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleCashSection() {
+            var cashRadio = document.querySelector('input[name="PaymentType"][value="0"]');
+            var cashSection = document.getElementById('cashSection');
+            var changeSection = document.getElementById('changeSection');
+
+            if (cashRadio && cashRadio.checked) {
+                cashSection.style.display = 'block';
+                changeSection.style.display = 'block';
+            } else {
+                cashSection.style.display = 'none';
+                changeSection.style.display = 'none';
+            }
+        }
+
+        function calculateChange() {
+            var cashRadio = document.querySelector('input[name="PaymentType"][value="0"]');
+            var cashGivenInput = document.getElementById('cashGivenInput');
+            var totalAmountInput = document.getElementById('totalAmount');
+            var changeDisplay = document.getElementById('changeDisplay');
+
+            if (!cashRadio || !cashRadio.checked) {
+                changeDisplay.value = "";
+                return;
+            }
+
+            var total = parseFloat(totalAmountInput.value.replace(',', '.')) || 0;
+            var cash = parseFloat(cashGivenInput.value.replace(',', '.')) || 0;
+
+            if (cash >= total && total > 0) {
+                var change = cash - total;
+                changeDisplay.value = change.toFixed(2) + " ₺";
+            } else {
+                changeDisplay.value = "";
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var radios = document.querySelectorAll('input[name="PaymentType"]');
+            radios.forEach(function (r) {
+                r.addEventListener('change', function () {
+                    toggleCashSection();
+                    calculateChange();
+                });
+            });
+
+            var cashGivenInput = document.getElementById('cashGivenInput');
+            if (cashGivenInput) {
+                cashGivenInput.addEventListener('input', calculateChange);
+            }
+
+            toggleCashSection();
+            calculateChange();
+        });
+    </script>
+}
+

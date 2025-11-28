@@ -1,0 +1,60 @@
+﻿@model IEnumerable<AdisyonWeb.Entities.MenuCategory>
+
+    @{
+    ViewData["Title"] = "Menü";
+    }
+
+    <h2>Menü</h2>
+
+    @if (!Model.Any())
+{
+    <p>Henüz menüde kategori bulunmuyor.</p>
+}
+else
+{
+    foreach (var category in Model)
+    {
+        var activeItems = category.MenuItems
+            .Where(mi => mi.IsActive)
+            .OrderBy(mi => mi.Name)
+            .ToList();
+
+        if (!activeItems.Any())
+        {
+            continue; // Bu kategoride aktif ürün yoksa göstermeyelim
+        }
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">@category.Name</h4>
+            @if (!string.IsNullOrWhiteSpace(category.Description))
+                {
+            <small class="text-muted">@category.Description</small>
+                }
+        </div>
+        <div class="card-body p-0">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Ürün</th>
+                        <th>Açıklama</th>
+                        <th style="width:120px;">Fiyat</th>
+                        <th style="width:100px;">Stok</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in activeItems)
+                    {
+                    <tr>
+                        <td>@item.Name</td>
+                        <td>@item.Description</td>
+                        <td>@item.UnitPrice.ToString("0.00") ₺</td>
+                        <td>@item.StockQuantity</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    }
+}
