@@ -30,6 +30,9 @@
                     <th></th>
                 </tr>
             </thead>
+            @{
+            var toplamTutar = Model.OrderItems.Sum(oi => oi.Quantity * oi.UnitPrice);
+            }
             <tbody>
                 @foreach (var item in Model.OrderItems)
                 {
@@ -46,8 +49,8 @@
                                class="btn btn-outline-secondary">+</a>
                         </div>
                     </td>
-                    <td>@item.UnitPrice.ToString("0.00")</td>
-                    <td>@(item.Quantity * item.UnitPrice).ToString("0.00")</td>
+                    <td>@item.UnitPrice</td>
+                    <td>@(item.Quantity * item.UnitPrice)</td>
                     <td>
                         <a asp-action="RemoveItem"
                            asp-route-orderItemId="@item.OrderItemId"
@@ -59,10 +62,11 @@
             <tfoot>
                 <tr>
                     <th colspan="3" class="text-end">Toplam:</th>
-                    <th>@Model.Order.TotalAmount.ToString("0.00")</th>
+                    <th>@toplamTutar</th>
                     <th></th>
                 </tr>
             </tfoot>
+
         </table>
 
         <a asp-action="Payment"

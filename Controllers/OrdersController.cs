@@ -118,15 +118,22 @@ namespace AdisyonWeb.Controllers
                     UnitPrice = menuItem.UnitPrice
                 };
 
-                _context.OrderItems.Add(existingItem);
+                // ÖNEMLÝ: Hem context'e hem navigasyon koleksiyonuna ekleyelim
+                order.OrderItems.Add(existingItem);
+                //_context.OrderItems.Add(existingItem); // Bunu yazmasan da EF, navigation'dan anlar
             }
             else
             {
                 existingItem.Quantity += 1;
             }
 
-            // Toplam tutarý güncelle
-            order.TotalAmount = order.OrderItems.Sum(oi => oi.Quantity * oi.UnitPrice);
+            // Önce deðiþiklikleri kaydedelim
+            await _context.SaveChangesAsync();
+
+            // Sonra DB üzerinden tekrar toplamý hesaplayalým (garanti çözüm)
+            order.TotalAmount = await _context.OrderItems
+                .Where(oi => oi.OrderId == order.OrderId)
+                .SumAsync(oi => oi.Quantity * oi.UnitPrice);
 
             await _context.SaveChangesAsync();
 
