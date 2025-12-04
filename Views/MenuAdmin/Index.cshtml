@@ -1,0 +1,249 @@
+﻿@model AdisyonWeb.ViewModels.MenuAdminViewModel
+
+@{
+    ViewData["Title"] = "Menü Yönetimi";
+
+    var grouped = Model.MenuItems
+        .OrderBy(m => m.Category.Name)
+        .ThenBy(m => m.Name)
+        .GroupBy(m => m.Category.Name);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="mb-0">Menü Yönetimi</h2>
+        <small class="text-muted">
+            Buradan menüdeki ürünleri güncelleyebilir veya yeni ürün ekleyebilirsiniz.
+        </small>
+    </div>
+    <div>
+        <span class="badge bg-light text-dark border">
+            Toplam ürün: @Model.MenuItems.Count
+        </span>
+    </div>
+</div>
+
+@if (TempData["Error"] != null)
+{
+<div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+<div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div class="row">
+    <!-- SOL: Yeni ürün ekleme kartı -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <strong>Yeni Ürün Ekle</strong>
+            </div>
+            <div class="card-body">
+                <form asp-action="Add" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label class="form-label">Kategori</label>
+                        <select asp-for="NewCategoryId" class="form-select" name="NewCategoryId">
+                            <option value="">Seçiniz...</option>
+                            @foreach (var c in Model.Categories)
+                            {
+                            <option value="@c.CategoryId">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Ürün Adı</label>
+                        <input asp-for="NewName" name="NewName" class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Açıklama</label>
+                        <textarea asp-for="NewDescription" name="NewDescription" class="form-control" rows="2"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Fiyat (₺)</label>
+                        <input asp-for="NewUnitPrice" name="NewUnitPrice" type="number" step="0.01" class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Stok Miktarı</label>
+                        <input asp-for="NewStockQuantity" name="NewStockQuantity" type="number" class="form-control" />
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input asp-for="NewIsActive" name="NewIsActive" class="form-check-input" type="checkbox" checked />
+                        <label class="form-check-label">Aktif (menüde görünsün)</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        Ürünü Ekle
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SAĞ: Mevcut ürünler -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <strong>Mevcut Ürünler</strong>
+                <small class="text-muted">Kategori bazlı düzenleme</small>
+            </div>
+            <div class="card-body">
+
+                @if (!Model.MenuItems.Any())
+                {
+                <p>Henüz menüde ürün bulunmuyor.</p>
+                }
+                else
+                {
+                <div class="accordion" id="menuAdminAccordion">
+                    @foreach (var group in grouped)
+                        {
+                            var key = group.Key
+                                .Replace(" ", "")
+                                .Replace("ı", "i").Replace("İ", "I")
+                                .Replace("ç", "c").Replace("Ç", "C")
+                                .Replace("ş", "s").Replace("Ş", "S")
+                                .Replace("ğ", "g").Replace("Ğ", "G")
+                                .Replace("ö", "o").Replace("Ö", "O")
+                                .Replace("ü", "u").Replace("Ü", "U");
+
+                            var collapseId = $"collapse_{key}";
+                            var headingId = $"heading_{key}";
+
+                    <div class="accordion-item mb-2 border-0">
+                        <h2 class="accordion-header" id="@headingId">
+                            <button class="accordion-button collapsed"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#@collapseId"
+                                    aria-expanded="false"
+                                    aria-controls="@collapseId">
+                                @group.Key
+                                <span class="badge bg-light text-dark ms-2">
+                                    @group.Count() ürün
+                                </span>
+                            </button>
+                        </h2>
+                        <div id="@collapseId"
+                             class="accordion-collapse collapse"
+                             aria-labelledby="@headingId"
+                             data-bs-parent="#menuAdminAccordion">
+                            <div class="accordion-body p-0">
+                                <table class="table table-sm table-hover mb-0 align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width:20%;">Ürün</th>
+                                            <th style="width:25%;">Açıklama</th>
+                                            <th style="width:10%;">Fiyat</th>
+                                            <th style="width:10%;">Stok</th>
+                                            <th style="width:15%;">Kategori</th>
+                                            <th style="width:10%;">Durum</th>
+                                            <th style="width:10%;" class="text-end">İşlem</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in group)
+                                            {
+                                                var formId = $"f_{item.MenuItemId}";
+
+                                        <tr>
+                                            <td>
+                                                <input name="name"
+                                                       form="@formId"
+                                                       class="form-control form-control-sm"
+                                                       value="@item.Name" />
+                                            </td>
+                                            <td>
+                                                <textarea name="description"
+                                                          form="@formId"
+                                                          class="form-control form-control-sm"
+                                                          rows="1">@item.Description</textarea>
+                                            </td>
+                                            <td>
+                                                <input name="unitPrice"
+                                                       form="@formId"
+                                                       type="number"
+                                                       step="0.01"
+                                                       class="form-control form-control-sm text-end"
+                                                       value="@item.UnitPrice.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" />
+                                            </td>
+                                            <td>
+                                                <input name="stockQuantity"
+                                                       form="@formId"
+                                                       type="number"
+                                                       class="form-control form-control-sm text-end"
+                                                       value="@item.StockQuantity" />
+                                            </td>
+                                            <td>
+                                                <select name="categoryId"
+                                                        form="@formId"
+                                                        class="form-select form-select-sm">
+                                                    @foreach (var c in Model.Categories)
+                                                            {
+                                                                if (c.CategoryId == item.CategoryId)
+                                                                {
+                                                    <option value="@c.CategoryId" selected>@c.Name</option>
+                                                                }
+                                                                else
+                                                                {
+                                                    <option value="@c.CategoryId">@c.Name</option>
+                                                                }
+                                                            }
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input"
+                                                           type="checkbox"
+                                                           name="isActiveFlag"
+                                                           form="@formId"
+                                                           value="true"
+                                                           @(item.IsActive ? "checked" : "") />
+                                                    <label class="form-check-label">Aktif</label>
+                                                </div>
+                                            </td>
+                                            <td class="text-end">
+                                                <form id="@formId"
+                                                      asp-action="Update"
+                                                      method="post"
+                                                      class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@item.MenuItemId" />
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary me-1">
+                                                        Kaydet
+                                                    </button>
+                                                </form>
+
+                                                <form asp-action="Delete"
+                                                      method="post"
+                                                      class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@item.MenuItemId" />
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            onclick="return confirm('Bu ürünü silmek istediğinize emin misiniz?');">
+                                                        Sil
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                            }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                        }
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
